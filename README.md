@@ -1,2 +1,2 @@
 # Winds of the North Maintenance
-SKSE plugin to assist with WJ/Colletion modlist update maintenance tasks 
+SKSE plugin to assist with WJ/Collection modlist update maintenance tasks 
