@@ -10,7 +10,10 @@ public:
     inline static bool UnsafeOnFirstInstall;
     inline static bool SafeOnFirstInstall;
 
-    inline static std::vector<std::pair<RE::FormID,std::string>> PlayerSpellsToRefresh;
+    inline static std::vector<std::pair<RE::FormID, std::string>> PlayerSpellsToRefresh;
+    inline static std::vector<std::pair<RE::FormID, std::string>> PlayerPerksToRefresh;
+    inline static std::vector<std::pair<RE::FormID, std::string>> PlayerQuestsToRefresh;
+    inline static std::vector<std::string>                        ConsoleCommandsToRun;
 
     inline static std::int32_t currentStyleIndex;
 
@@ -37,6 +40,15 @@ public:
             tokens.push_back(token);
         }
         return tokens;
+    }
+
+    static std::string toLower(const std::string& str)
+    {
+        std::string result = str;
+        for (char& c : result) {
+            c = std::tolower(c);
+        }
+        return result;
     }
 
     static void LoadSettings()
@@ -68,12 +80,42 @@ public:
         if (section) {
 
             for (auto& [key, value] : *section) {
-                logger::info("Loaded {}", key.pItem);
-
                 auto itemInfo = Settings::split(value, '~');
-                logger::info("FormID {}: Filename {}", itemInfo[0], itemInfo[1]);
+                logger::info("Setting Found: Type {}: FormID {}: Filename {}", key.pItem, itemInfo[0], itemInfo[1]);
                 auto formattedFormId = ParseFormID(itemInfo[0]);
-                PlayerSpellsToRefresh.push_back(std::make_pair(formattedFormId, itemInfo[1]));
+
+                auto typeString = toLower(std::string(key.pItem));
+
+                if (formattedFormId) {
+                    if (typeString.find("spell") != std::string::npos) {
+                        logger::debug("Spell {} loaded", value);
+                        PlayerSpellsToRefresh.push_back(std::make_pair(formattedFormId, itemInfo[1]));
+                    }
+                    else if (typeString.find("quest") != std::string::npos) {
+                        logger::debug("Quest {} loaded", value);
+
+                        PlayerQuestsToRefresh.push_back(std::make_pair(formattedFormId, itemInfo[1]));
+                    }
+                    else if (typeString.find("perk") != std::string::npos) {
+                        logger::debug("Perk {} loaded", value);
+
+                        PlayerPerksToRefresh.push_back(std::make_pair(formattedFormId, itemInfo[1]));
+                    }
+                }
+                else {
+                    logger::info("Could not parse formID {}, please double check formatting/ID",value);
+                }
+            }
+        }
+
+        auto console = ini.GetSection("ConsoleCommands");
+
+        if (console) {
+
+            for (auto& [key, value] : *console) {
+                logger::debug("Saving console command {}", value);
+
+                ConsoleCommandsToRun.push_back(value);
             }
         }
         

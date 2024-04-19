@@ -4,41 +4,72 @@
 
 namespace Events
 {
-    //Credit: ThirdEyeSqueegee for ModlistUpdateChecker
     void LoadEvent::RefreshFormsForUpdate(int newVersion)
     {
         logger::debug("Spinning up refresh threads");
-        auto  spellItems = FormLoader::GetSingleton()->SpellItemsToRefresh;
-        logger::debug("{} Spells to refresh", spellItems.size());
+        auto spellItems = FormLoader::GetSingleton()->SpellItemsToRefresh;
+        auto perkItems  = FormLoader::GetSingleton()->PerkItemsToRefresh;
+        auto questItems = FormLoader::GetSingleton()->QuestItemsToRefresh;
+        auto consoleCommands = FormLoader::GetSingleton()->ConsoleCommandsToRun;
         auto* player     = RE::PlayerCharacter::GetSingleton();
 
         std::jthread([=] {
             std::this_thread::sleep_for(std::chrono::seconds(10));
             SKSE::GetTaskInterface()->AddTask([=] {
+                auto updateMsg = fmt::format("Updating Winds of the North to version {}", insertPeriods(newVersion)).c_str();
+                RE::DebugNotification(updateMsg);
 
                 for (auto spell : spellItems) {
-                    logger::info("Removing spell items {}", spell->GetName());
+                    logger::info("Removing spell item {}", spell->GetName());
 
                     player->RemoveSpell(spell);
-                }            
+                }
+
+                for (auto perk : perkItems) {
+                    logger::info("Removing perk item {}", perk->GetName());
+
+                    player->RemovePerk(perk);
+                }
+
+                for (auto quest : questItems) {
+                    logger::info("Stopping quest item {}", quest->GetName());
+
+                    if (quest->IsRunning()) {
+                        quest->Stop();
+                    }
+                }
+
+                for (auto command : consoleCommands) {
+                    logger::info("Running console command {}", command);
+                    Console::ExecuteCommand(command);
+                }
             });
-        }).detach();
 
-        //Stagger out adding spells from removing
-        //For some reason with certain spells, if you remove then add too quickly it tends to cause issues
-        std::jthread([=] {
-            std::this_thread::sleep_for(std::chrono::seconds(12));
+            //Wait briefly before processing adds
+            std::this_thread::sleep_for(std::chrono::seconds(5));
             SKSE::GetTaskInterface()->AddTask([=] {
-
                 for (auto spell : spellItems) {
-                    logger::info("Adding spell items {}", spell->GetName());
+                    logger::info("Adding spell item {}", spell->GetName());
 
                     player->AddSpell(spell);
+                }
+
+                for (auto perk : perkItems) {
+                    logger::info("Adding perk item {}", perk->GetName());
+
+                    player->AddPerk(perk);
+                }
+
+                for (auto quest : questItems) {
+                    logger::info("Starting quest item {}", quest->GetName());
+
+                    quest->Start();
                 }
 
                 auto updateMsg = fmt::format("Winds of the North updated to version {}", insertPeriods(newVersion)).c_str();
                 RE::DebugNotification(updateMsg);
             });
+
         }).detach();
     }
 

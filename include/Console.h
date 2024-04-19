@@ -16,9 +16,6 @@ public:
         }
     }
 
-private:
-    static constexpr char CLASS_NAME[] = "WindsMaintenance";
-
     inline static void CompileAndRun(RE::Script* script, RE::TESObjectREFR* targetRef, RE::COMPILER_NAME name = RE::COMPILER_NAME::kSystemWindowCompiler)
     {
         RE::ScriptCompiler compiler;
@@ -34,13 +31,8 @@ private:
 
     inline static RE::NiPointer<RE::TESObjectREFR> GetSelectedRef()
     {
-        auto handle = GetSelectedRefHandle();
-        return handle.get();
-    }
-
-    inline static RE::ObjectRefHandle GetSelectedRefHandle()
-    {
         REL::Relocation<RE::ObjectRefHandle*> selectedRef{ RELOCATION_ID(519394, REL::Module::get().version().patch() < 1130 ? 405935 : 504099) };
-        return *selectedRef;
+        auto handle = *selectedRef;
+        return handle.get();
     }
 };
