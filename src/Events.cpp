@@ -16,7 +16,8 @@ namespace Events
         std::jthread([=] {
             std::this_thread::sleep_for(std::chrono::seconds(10));
             SKSE::GetTaskInterface()->AddTask([=] {
-                auto updateMsg = fmt::format("Updating Winds of the North to version {}", insertPeriods(newVersion)).c_str();
+                auto settings = Settings::GetSingleton();
+                auto updateMsg = fmt::format("Updating {} to version {}", settings->ModlistName, insertPeriods(newVersion)).c_str();
                 RE::DebugNotification(updateMsg);
 
                 for (auto spell : spellItems) {
@@ -65,8 +66,9 @@ namespace Events
 
                     quest->Start();
                 }
+                auto settings = Settings::GetSingleton();
 
-                auto updateMsg = fmt::format("Winds of the North updated to version {}", insertPeriods(newVersion)).c_str();
+                auto updateMsg = fmt::format("{} updated to version {}", settings->ModlistName, insertPeriods(newVersion)).c_str();
                 RE::DebugNotification(updateMsg);
             });
 
