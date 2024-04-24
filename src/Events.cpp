@@ -83,9 +83,10 @@ namespace Events
         std::jthread([=] {
             std::this_thread::sleep_for(std::chrono::seconds(10));
             SKSE::GetTaskInterface()->AddTask([=] {
+                auto settings = Settings::GetSingleton();
                 // Show message box
                 std::string unsafe{
-                    "Winds of the North\nThis update is savegame incompatible!\n Continuing to play on this save forfeits official support for this modlist. \n\n"
+                    settings->ModlistName + "\nThis update is savegame incompatible!\n Continuing to play on this save forfeits official support for this modlist. \n\n"
                 };
                 RE::DebugMessageBox(unsafe.c_str());
             });
