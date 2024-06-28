@@ -1,12 +1,16 @@
+#include "ModlistVersion.h"
+
+using ModlistVersion = ModlistMaintenance::ModlistVersion;
+
 class Settings
 {
 public:
 
     inline static std::string ModlistName;
     inline static bool DebugLogs;
-    inline static int CurrentVersion;
-    inline static int CurrentSaveVersion = 0;
-    inline static int LastSaveSafeVersion;
+    inline static ModlistVersion CurrentVersion;
+    inline static ModlistVersion CurrentSaveVersion = { 0, 0, 0 };
+    inline static ModlistVersion LastSafeVersion;
     inline static bool UnsafeOnFirstInstall;
     inline static bool SafeOnFirstInstall;
 
@@ -51,6 +55,17 @@ public:
         return result;
     }
 
+    static std::vector<std::string> ParseVersionString(const std::string& str)
+    {
+        std::vector<std::string> version;
+        auto versions = split(str, '.');
+
+        if (versions.size() < 3) {
+            logger::error("Unable to parse MAJOR.MINOR.PATCH from {}", str);
+        }
+        return versions;
+    }
+
     static void LoadSettings()
     {
         logger::info("Loading settings");
@@ -71,10 +86,19 @@ public:
 
         ModlistName = std::string(ini.GetValue("General", "sModlistName", "EMPTY_NAME"));
         logger::info("Modlist Name {}", ModlistName);
-        CurrentVersion = ini.GetLongValue("General", "iCurrentVersion", 0);
-        logger::info("Current version from ini {}", CurrentVersion);
-        LastSaveSafeVersion = ini.GetLongValue("General", "iLastSaveSafeVersion", 0);
-        logger::info("Last save safe version from ini {}", LastSaveSafeVersion);
+
+        auto current = ini.GetValue("General", "sCurrentVersion", 0);
+        logger::info("Current version from ini {}", current);
+        auto currentVersions = ParseVersionString(current);
+        CurrentVersion       = ModlistVersion(currentVersions);
+
+        logger::info("Successfuly parsed current version");
+
+        auto last = ini.GetValue("General", "sLastSaveSafeVersion", 0);
+        logger::info("Last save safe version from ini {}", last);
+        LastSafeVersion = ModlistVersion(ParseVersionString(last));
+
+        logger::info("Successfuly parsed last version");
 
         auto section = ini.GetSection("RefreshPlayerOnUpdate");
         if (section) {

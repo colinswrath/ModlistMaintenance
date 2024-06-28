@@ -2,9 +2,11 @@
 #include "FormLoader.h"
 #include "Console.h"
 
+using ModlistVersion = ModlistMaintenance::ModlistVersion;
+
 namespace Events
 {
-    void LoadEvent::RefreshFormsForUpdate(int newVersion)
+    void LoadEvent::RefreshFormsForUpdate()
     {
         logger::debug("Spinning up refresh threads");
         auto spellItems = FormLoader::GetSingleton()->SpellItemsToRefresh;
@@ -17,7 +19,7 @@ namespace Events
             std::this_thread::sleep_for(std::chrono::seconds(10));
             SKSE::GetTaskInterface()->AddTask([=] {
                 auto settings = Settings::GetSingleton();
-                auto updateMsg = fmt::format("Updating {} to version {}", settings->ModlistName, insertPeriods(newVersion)).c_str();
+                auto updateMsg = fmt::format("Updating {} to version {}", settings->ModlistName, settings->CurrentVersion.getVersionAsString()).c_str();
                 RE::DebugNotification(updateMsg);
 
                 for (auto spell : spellItems) {
@@ -68,16 +70,16 @@ namespace Events
                 }
                 auto settings = Settings::GetSingleton();
 
-                auto updateMsg = fmt::format("{} updated to version {}", settings->ModlistName, insertPeriods(newVersion)).c_str();
+                auto updateMsg = fmt::format("{} updated to version {}", settings->ModlistName, settings->CurrentVersion.getVersionAsString()).c_str();
                 RE::DebugNotification(updateMsg);
             });
 
         }).detach();
     }
 
-    void LoadEvent::SaveSafeUpdate(int newVersion)
+    void LoadEvent::SaveSafeUpdate()
     {
-        RefreshFormsForUpdate(newVersion);
+        RefreshFormsForUpdate();
     }
 
     void LoadEvent::SaveUnsafeUpdate()
@@ -100,19 +102,19 @@ namespace Events
         logger::debug("---Load: Checking version---");
         auto settings = Settings::GetSingleton();
 
-        if (settings->CurrentSaveVersion > 0) {
+        if (!settings->CurrentSaveVersion.IsEmptyVersion()) {
             auto saveVersion    = settings->CurrentSaveVersion;
             auto currentVersion = settings->CurrentVersion;
-            logger::debug("Current save version {}", saveVersion);
+            logger::debug("Current save version {}", saveVersion.getVersionAsString());
             if (saveVersion < currentVersion) {
-                logger::info("Update detected. Update to {}", currentVersion);
-                if (settings->LastSaveSafeVersion > saveVersion) {
-                    logger::info("Save unsafe update detected! Last save safe version to current was {}", settings->LastSaveSafeVersion);
+                logger::info("Update detected. Update to {}", currentVersion.getVersionAsString());
+                if (settings->LastSafeVersion > saveVersion) {
+                    logger::info("Save unsafe update detected! Last save safe version to current was {}", settings->LastSafeVersion.getVersionAsString());
                     SaveUnsafeUpdate();
                 }
                 else {
                     logger::info("Save safe update. Continuing");
-                    SaveSafeUpdate(settings->CurrentVersion);
+                    SaveSafeUpdate();
                 }
             }
             else {
@@ -127,7 +129,7 @@ namespace Events
             }
             else if (settings->SafeOnFirstInstall) {
                 logger::info("Update on first install. Refreshing");
-                SaveSafeUpdate(settings->CurrentVersion);
+                SaveSafeUpdate();
             }
         }
         settings->CurrentSaveVersion = settings->CurrentVersion;
