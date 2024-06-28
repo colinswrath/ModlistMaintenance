@@ -11,8 +11,8 @@ namespace Events
             return &load;
         }
 
-        void                     RefreshFormsForUpdate(int newVersion);
-        void                     SaveSafeUpdate(int newVersion);
+        void                     RefreshFormsForUpdate();
+        void                     SaveSafeUpdate();
         void                     SaveUnsafeUpdate();
         void                     LoadCheckVersion();
 
