@@ -32,8 +32,6 @@ void InitListener(SKSE::MessagingInterface::Message* a_msg)
         Settings::GetSingleton()->LoadSettings();
         FormLoader::GetSingleton()->LoadAllForms();
 		break;
-    case SKSE::MessagingInterface::kPostLoadGame:
-        Events::LoadEvent::GetSingleton()->LoadCheckVersion();
 	}
 }
 
