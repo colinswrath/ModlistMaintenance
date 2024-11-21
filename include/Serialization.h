@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Events.h"
 using ModlistVersion = ModlistMaintenance::ModlistVersion;
 
 namespace Serialization
@@ -45,40 +45,39 @@ namespace Serialization
         std::uint32_t length;
         a_skse->GetNextRecordInfo(type, version, length);
 
-        if (type != SerializationType) {
+        if (type != SerializationType || version != SerializationVersion) {
             logger::debug("No save data found");
             return;
         }
-
-        if (version != SerializationVersion) {
-            logger::error("Unable to load data");
-            return;
-        }
-
-        std::vector<int> deserializedVector;
-        std::size_t size;
-        if (!a_skse->ReadRecordData(size)) {
-            logger::error("Failed to load size");
-            return;
-        }
-
-        logger::info("Size {}", std::to_string(size));
-
-        for (std::size_t i = 0; i < size; ++i) {
-            int elem;
-            if (!a_skse->ReadRecordData(elem)) {
-                logger::error("Failed to load setting element");
+        else {
+            std::vector<int> deserializedVector;
+            std::size_t size;
+            if (!a_skse->ReadRecordData(size)) {
+                logger::error("Failed to load size");
                 return;
             }
-            else {
-                logger::info(FMT_STRING("Deserialized: {}"), std::to_string(elem));
-                deserializedVector.push_back(elem);
+
+            logger::info("Size {}", std::to_string(size));
+
+            for (std::size_t i = 0; i < size; ++i) {
+                int elem;
+                if (!a_skse->ReadRecordData(elem)) {
+                    logger::error("Failed to load setting element");
+                    return;
+                }
+                else {
+                    logger::info(FMT_STRING("Deserialized: {}"), std::to_string(elem));
+                    deserializedVector.push_back(elem);
+                }
             }
+
+            auto settings                = Settings::GetSingleton();
+            settings->CurrentSaveVersion = ModlistVersion(deserializedVector[0], deserializedVector[1], deserializedVector[2]);
+            logger::info(FMT_STRING("Deserialized: {}"), settings->CurrentSaveVersion.getVersionAsString());
         }
 
-        auto settings                = Settings::GetSingleton();
-        settings->CurrentSaveVersion = ModlistVersion(deserializedVector[0], deserializedVector[1], deserializedVector[2]);
-        logger::info(FMT_STRING("Deserialized: {}"), settings->CurrentSaveVersion.getVersionAsString());
+        Events::LoadEvent::GetSingleton()->LoadCheckVersion();
+
     }
 
     inline void RevertCallback([[maybe_unused]] SKSE::SerializationInterface* a_skse)
