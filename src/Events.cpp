@@ -20,7 +20,7 @@ namespace Events
             SKSE::GetTaskInterface()->AddTask([=] {
                 auto settings = Settings::GetSingleton();
                 auto updateMsg = fmt::format("Updating {} to version {}", settings->ModlistName, settings->CurrentVersion.getVersionAsString()).c_str();
-                RE::DebugNotification(updateMsg);
+                RE::SendHUDMessage::ShowHUDMessage(updateMsg);
 
                 for (auto spell : spellItems) {
                     logger::info("Removing spell item {}", spell->GetName());
@@ -71,7 +71,7 @@ namespace Events
                 auto settings = Settings::GetSingleton();
 
                 auto updateMsg = fmt::format("{} updated to version {}", settings->ModlistName, settings->CurrentVersion.getVersionAsString()).c_str();
-                RE::DebugNotification(updateMsg);
+                RE::SendHUDMessage::ShowHUDMessage(updateMsg);
             });
 
         }).detach();
